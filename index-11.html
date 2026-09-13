@@ -1,0 +1,855 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SZA · Budget Multi-Comptes</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#6B1F2A">
+<link rel="icon" href="icon-192.png" type="image/png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="SZA Budget">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Karla:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --burgundy:#6B1F2A;
+    --burgundy-deep:#4E1620;
+    --gold:#B8860B;
+    --gold-soft:#D9AE4E;
+    --cream:#FBF6ED;
+    --cream-dim:#F1E9D8;
+    --ink:#2A2020;
+    --ink-soft:#6b5b57;
+    --line:#E4D7C3;
+    --good:#4C7A5C;
+    --over:#A94438;
+    --card:#FFFFFF;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;padding:0;background:var(--cream);color:var(--ink);font-family:'Karla',system-ui,sans-serif;}
+  #app{max-width:480px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column;position:relative;padding-bottom:72px;}
+
+  header.top{
+    background:linear-gradient(160deg,var(--burgundy),var(--burgundy-deep));
+    color:var(--cream);
+    padding:18px 18px 16px;
+    border-bottom:3px solid var(--gold);
+  }
+  header.top .brand{
+    font-family:'Cormorant Garamond',serif;
+    font-weight:700;
+    font-size:22px;
+    letter-spacing:0.3px;
+  }
+  header.top .brand span{color:var(--gold-soft);}
+  .month-nav{
+    display:flex;align-items:center;justify-content:space-between;
+    margin-top:14px;
+  }
+  .month-nav button{
+    background:rgba(255,255,255,0.12);
+    border:1px solid rgba(255,255,255,0.3);
+    color:var(--cream);
+    width:34px;height:34px;border-radius:8px;
+    font-size:16px;cursor:pointer;
+  }
+  .month-label{
+    font-family:'Cormorant Garamond',serif;
+    font-size:19px;font-weight:600;text-align:center;flex:1;
+  }
+  .period-row{
+    display:flex;gap:8px;margin-top:12px;
+  }
+  .period-pill{
+    flex:1;text-align:center;padding:7px 4px;border-radius:20px;
+    font-size:13px;font-weight:600;cursor:pointer;
+    border:1px solid rgba(255,255,255,0.35);
+    color:var(--cream);opacity:0.6;
+  }
+  .period-pill.active{
+    background:var(--gold);border-color:var(--gold);color:var(--burgundy-deep);opacity:1;
+  }
+
+  main{flex:1;padding:16px;}
+  .card{
+    background:var(--card);
+    border-radius:14px;
+    padding:16px;
+    margin-bottom:14px;
+    box-shadow:0 1px 3px rgba(107,31,42,0.08);
+    border:1px solid var(--line);
+  }
+  .card h2{
+    font-family:'Cormorant Garamond',serif;
+    font-size:18px;margin:0 0 12px;color:var(--burgundy);
+    display:flex;align-items:center;justify-content:space-between;
+  }
+  .muted{color:var(--ink-soft);font-size:13px;}
+  .empty{
+    text-align:center;padding:22px 10px;color:var(--ink-soft);font-size:14px;
+  }
+
+  /* Dashboard */
+  .totals-grid{display:flex;gap:10px;}
+  .total-box{
+    flex:1;background:var(--cream-dim);border-radius:10px;padding:10px 12px;
+  }
+  .total-box .label{font-size:11px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:0.5px;}
+  .total-box .value{font-family:'Cormorant Garamond',serif;font-size:20px;font-weight:700;margin-top:2px;}
+  .total-box.income .value{color:var(--good);}
+  .total-box.expense .value{color:var(--burgundy);}
+
+  .budget-line{margin-bottom:14px;}
+  .budget-line:last-child{margin-bottom:0;}
+  .budget-line-top{display:flex;justify-content:space-between;font-size:13.5px;margin-bottom:5px;}
+  .budget-line-top .cat{font-weight:600;}
+  .budget-line-top .amt{color:var(--ink-soft);}
+  .bar-track{height:8px;background:var(--cream-dim);border-radius:5px;overflow:hidden;}
+  .bar-fill{height:100%;border-radius:5px;background:var(--gold);transition:width .3s;}
+  .bar-fill.over{background:var(--over);}
+  .bar-fill.income-fill{background:var(--good);}
+  .remaining-text{font-size:12px;color:var(--ink-soft);margin-top:4px;text-align:right;}
+
+  .account-row{
+    display:flex;justify-content:space-between;align-items:center;
+    padding:10px 0;border-bottom:1px solid var(--line);
+  }
+  .account-row-clickable{cursor:pointer;}
+  .account-row-clickable:active{background:var(--cream-dim);}
+  .account-row:last-child{border-bottom:none;}
+  .account-row .name{font-weight:600;font-size:14.5px;}
+  .account-row .tag{font-size:11px;color:var(--ink-soft);}
+  .account-row .bal{font-family:'Cormorant Garamond',serif;font-weight:700;font-size:17px;color:var(--burgundy);}
+  .grand-total{
+    display:flex;justify-content:space-between;align-items:baseline;
+    margin-top:10px;padding-top:12px;border-top:2px solid var(--gold);
+  }
+  .grand-total .value{font-family:'Cormorant Garamond',serif;font-size:24px;font-weight:700;color:var(--burgundy);}
+
+  /* Transactions */
+  .tx-row{
+    display:flex;justify-content:space-between;align-items:center;
+    padding:10px 0;border-bottom:1px solid var(--line);gap:10px;
+  }
+  .tx-row:last-child{border-bottom:none;}
+  .tx-left{flex:1;min-width:0;}
+  .tx-cat{font-weight:600;font-size:14px;}
+  .tx-meta{font-size:11.5px;color:var(--ink-soft);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .tx-amt{font-weight:700;font-size:14.5px;white-space:nowrap;}
+  .tx-amt.income{color:var(--good);}
+  .tx-amt.expense{color:var(--over);}
+  .tx-del{background:none;border:none;color:var(--ink-soft);font-size:16px;cursor:pointer;padding:4px 6px;}
+
+  /* Forms */
+  label{display:block;font-size:12.5px;color:var(--ink-soft);margin:10px 0 4px;font-weight:600;}
+  label:first-child{margin-top:0;}
+  input[type=text],input[type=number],input[type=date],select{
+    width:100%;padding:10px 11px;border:1px solid var(--line);border-radius:9px;
+    font-size:15px;font-family:'Karla',sans-serif;background:var(--cream-dim);color:var(--ink);
+  }
+  .seg{display:flex;gap:8px;margin-top:2px;}
+  .seg button{
+    flex:1;padding:9px;border-radius:9px;border:1px solid var(--line);
+    background:var(--cream-dim);font-size:13.5px;font-weight:600;color:var(--ink-soft);cursor:pointer;
+  }
+  .seg button.active.income{background:var(--good);border-color:var(--good);color:#fff;}
+  .seg button.active.expense{background:var(--over);border-color:var(--over);color:#fff;}
+  .btn-primary{
+    width:100%;padding:12px;border:none;border-radius:10px;background:var(--burgundy);
+    color:var(--cream);font-size:15px;font-weight:700;margin-top:16px;cursor:pointer;
+    font-family:'Karla',sans-serif;
+  }
+  .btn-primary:active{background:var(--burgundy-deep);}
+  .btn-secondary{
+    width:100%;padding:10px;border:1px dashed var(--gold);border-radius:10px;background:transparent;
+    color:var(--burgundy);font-size:13.5px;font-weight:600;margin-top:10px;cursor:pointer;
+  }
+  .row-2{display:flex;gap:10px;}
+  .row-2>div{flex:1;}
+
+  .budget-input-row{
+    display:flex;gap:8px;align-items:center;margin-bottom:8px;
+  }
+  .budget-input-row input[type=text]{flex:1.3;}
+  .budget-input-row input[type=number]{flex:1;}
+  .budget-input-row button{
+    background:none;border:none;color:var(--over);font-size:18px;cursor:pointer;padding:2px 6px;
+  }
+
+  /* Bottom nav */
+  nav.bottom{
+    position:fixed;bottom:0;left:50%;transform:translateX(-50%);
+    width:100%;max-width:480px;background:var(--card);
+    border-top:1px solid var(--line);
+    display:flex;justify-content:space-around;
+    padding:8px 4px calc(8px + env(safe-area-inset-bottom));
+    box-shadow:0 -2px 8px rgba(107,31,42,0.06);
+  }
+  nav.bottom button{
+    background:none;border:none;display:flex;flex-direction:column;align-items:center;gap:3px;
+    color:var(--ink-soft);font-size:10.5px;font-weight:600;cursor:pointer;padding:4px 8px;
+    font-family:'Karla',sans-serif;
+  }
+  nav.bottom button svg{width:21px;height:21px;stroke:var(--ink-soft);fill:none;stroke-width:1.8;}
+  nav.bottom button.active{color:var(--burgundy);}
+  nav.bottom button.active svg{stroke:var(--burgundy);}
+
+  .fab{
+    position:fixed;bottom:80px;left:50%;
+    transform:translateX(148px);
+    width:52px;height:52px;border-radius:50%;
+    background:var(--gold);color:var(--burgundy-deep);
+    border:none;font-size:26px;box-shadow:0 3px 10px rgba(184,134,11,0.4);
+    cursor:pointer;display:flex;align-items:center;justify-content:center;
+    max-width:480px;
+  }
+
+  .modal-overlay{
+    position:fixed;inset:0;background:rgba(42,32,32,0.45);
+    display:flex;align-items:flex-end;justify-content:center;z-index:50;
+  }
+  .modal{
+    background:var(--cream);width:100%;max-width:480px;border-radius:18px 18px 0 0;
+    padding:20px 18px calc(20px + env(safe-area-inset-bottom));
+    max-height:85vh;overflow-y:auto;
+  }
+  .modal h3{
+    font-family:'Cormorant Garamond',serif;color:var(--burgundy);font-size:20px;margin:0 0 14px;
+    display:flex;justify-content:space-between;align-items:center;
+  }
+  .modal h3 .close{font-size:20px;color:var(--ink-soft);cursor:pointer;background:none;border:none;}
+
+  select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%236b5b57' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;}
+
+  .toast{
+    position:fixed;bottom:150px;left:50%;transform:translateX(-50%);
+    background:var(--burgundy);color:var(--cream);padding:9px 18px;border-radius:20px;
+    font-size:13px;z-index:60;opacity:0;transition:opacity .25s;pointer-events:none;
+  }
+  .toast.show{opacity:1;}
+
+  .loading{text-align:center;padding:60px 20px;color:var(--ink-soft);}
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="loading" class="loading">Chargement de ton budget…</div>
+</div>
+
+<script>
+(function(){
+  const STORAGE_KEY = 'sza-budget-multicomptes-v1';
+  const MOIS_NOMS = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
+
+  let state = null;
+  let currentTab = 'dashboard';
+  let currentMonthKey = monthKey(new Date());
+  let modalOpen = null; // 'tx' | 'account' | 'budgetline'
+
+  function monthKey(d){ return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0'); }
+  function fmtMonth(key){
+    const [y,m] = key.split('-');
+    return MOIS_NOMS[parseInt(m,10)-1] + ' ' + y;
+  }
+  function fmtAmount(n){
+    n = Math.round(n||0);
+    return n.toLocaleString('fr-FR') + ' F';
+  }
+  function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
+  function todayISO(){ return new Date().toISOString().slice(0,10); }
+
+  function defaultState(){
+    return {
+      accounts: [
+        {id: uid(), name:'Wave', start:0},
+        {id: uid(), name:'Orange Money (principal)', start:0},
+        {id: uid(), name:'Orange Money (dédié)', start:0},
+        {id: uid(), name:'Djamo', start:0},
+        {id: uid(), name:'Orange Banque', start:0},
+        {id: uid(), name:'M-Baobab', start:0}
+      ],
+      expenseCategories: ['Nourriture & Transport','Dépenses pro','Épargne','Autres'],
+      incomeSources: ['Cours privés','Cours en ligne (Académie)','SZA-Livres','Bakhoor','Autre revenu'],
+      months: {}, // key -> {period:'scolaire'|'vacances', incomeBudget:[{label,amount}], expenseBudget:[{label,amount}]}
+      templates: { scolaire: null, vacances: null }, // saved budget shapes, reused across months
+      transactions: [] // {id,date,accountId,type,category,amount,note}
+    };
+  }
+
+  function ensureMonth(key){
+    if(!state.months[key]){
+      state.months[key] = { period:'scolaire', incomeBudget:[], expenseBudget:[] };
+    }
+    return state.months[key];
+  }
+
+  async function loadState(){
+    try{
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if(raw){
+        state = JSON.parse(raw);
+        if(!state.expenseCategories) state.expenseCategories = defaultState().expenseCategories;
+        if(!state.incomeSources) state.incomeSources = defaultState().incomeSources;
+        if(!state.templates) state.templates = { scolaire:null, vacances:null };
+      } else {
+        state = defaultState();
+      }
+    }catch(e){
+      state = defaultState();
+    }
+  }
+
+  let saveTimer = null;
+  function saveState(){
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(()=>{
+      try{
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      }catch(e){
+        showToast("Erreur de sauvegarde, réessaie");
+      }
+    }, 250);
+  }
+
+  function showToast(msg){
+    let t = document.getElementById('toast');
+    if(!t){
+      t = document.createElement('div');
+      t.id='toast'; t.className='toast';
+      document.body.appendChild(t);
+    }
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(()=>t.classList.remove('show'), 1800);
+  }
+
+  // ---------- Computations ----------
+  function accountBalance(acc){
+    let bal = acc.start || 0;
+    state.transactions.forEach(tx=>{
+      if(tx.accountId === acc.id){
+        bal += tx.type === 'income' ? tx.amount : -tx.amount;
+      }
+    });
+    return bal;
+  }
+
+  function monthTransactions(key){
+    return state.transactions.filter(tx=> tx.date && tx.date.slice(0,7) === key);
+  }
+
+  function monthTotals(key){
+    const txs = monthTransactions(key);
+    let income=0, expense=0;
+    txs.forEach(tx=>{
+      if(tx.type==='income') income += tx.amount; else expense += tx.amount;
+    });
+    return {income, expense};
+  }
+
+  function categorySpent(key, category){
+    return monthTransactions(key)
+      .filter(tx=>tx.type==='expense' && tx.category===category)
+      .reduce((s,tx)=>s+tx.amount,0);
+  }
+
+  function sourceReceived(key, source){
+    return monthTransactions(key)
+      .filter(tx=>tx.type==='income' && tx.category===source)
+      .reduce((s,tx)=>s+tx.amount,0);
+  }
+
+  // ---------- Rendering ----------
+  function render(){
+    const app = document.getElementById('app');
+    const m = ensureMonth(currentMonthKey);
+    app.innerHTML = `
+      ${renderHeader(m)}
+      <main id="main">${renderTab(m)}</main>
+      ${renderFab()}
+      ${renderNav()}
+    `;
+    attachHeaderEvents();
+    attachNavEvents();
+    attachTabEvents(m);
+  }
+
+  function renderHeader(m){
+    return `
+    <header class="top">
+      <div class="brand">SZA · <span>Budget Multi-Comptes</span></div>
+      <div class="month-nav">
+        <button id="prevMonth">‹</button>
+        <div class="month-label">${fmtMonth(currentMonthKey)}</div>
+        <button id="nextMonth">›</button>
+      </div>
+      <div class="period-row">
+        <div class="period-pill ${m.period==='scolaire'?'active':''}" data-period="scolaire">Année scolaire</div>
+        <div class="period-pill ${m.period==='vacances'?'active':''}" data-period="vacances">Vacances</div>
+      </div>
+    </header>`;
+  }
+
+  function attachHeaderEvents(){
+    document.getElementById('prevMonth').onclick = ()=>{
+      const d = new Date(currentMonthKey+'-01T00:00:00');
+      d.setMonth(d.getMonth()-1);
+      currentMonthKey = monthKey(d);
+      render();
+    };
+    document.getElementById('nextMonth').onclick = ()=>{
+      const d = new Date(currentMonthKey+'-01T00:00:00');
+      d.setMonth(d.getMonth()+1);
+      currentMonthKey = monthKey(d);
+      render();
+    };
+    document.querySelectorAll('.period-pill').forEach(el=>{
+      el.onclick = ()=>{
+        ensureMonth(currentMonthKey).period = el.dataset.period;
+        saveState();
+        render();
+      };
+    });
+  }
+
+  function renderNav(){
+    const tabs = [
+      {id:'dashboard', label:'Résumé', icon:'<path d="M3 12l9-9 9 9"/><path d="M9 21V12h6v9"/>'},
+      {id:'accounts', label:'Comptes', icon:'<rect x="2" y="6" width="20" height="14" rx="2"/><path d="M2 10h20"/>'},
+      {id:'transactions', label:'Mouvements', icon:'<path d="M4 6h16M4 12h16M4 18h10"/>'},
+      {id:'budget', label:'Budget du mois', icon:'<path d="M3 3v18h18"/><path d="M7 15l4-4 3 3 5-6"/>'}
+    ];
+    return `<nav class="bottom">${tabs.map(t=>`
+      <button class="${currentTab===t.id?'active':''}" data-tab="${t.id}">
+        <svg viewBox="0 0 24 24">${t.icon}</svg>
+        ${t.label}
+      </button>`).join('')}</nav>`;
+  }
+
+  function attachNavEvents(){
+    document.querySelectorAll('nav.bottom button').forEach(btn=>{
+      btn.onclick = ()=>{ currentTab = btn.dataset.tab; render(); };
+    });
+  }
+
+  function renderFab(){
+    if(currentTab==='budget') return '';
+    return `<button class="fab" id="fabAdd">+</button>`;
+  }
+
+  function renderTab(m){
+    if(currentTab==='dashboard') return renderDashboard(m);
+    if(currentTab==='accounts') return renderAccounts();
+    if(currentTab==='transactions') return renderTransactions();
+    if(currentTab==='budget') return renderBudget(m);
+    return '';
+  }
+
+  // ----- Dashboard -----
+  function renderDashboard(m){
+    const totals = monthTotals(currentMonthKey);
+    const totalBalance = state.accounts.reduce((s,a)=>s+accountBalance(a),0);
+
+    const expenseBudgetTotal = m.expenseBudget.reduce((s,b)=>s+ (b.amount||0),0);
+    const incomeBudgetTotal = m.incomeBudget.reduce((s,b)=>s+ (b.amount||0),0);
+
+    let incomeRows = '';
+    if(m.incomeBudget.length===0){
+      incomeRows = `<div class="empty">Aucun revenu prévu pour ce mois.<br>Va dans « Budget du mois » pour en ajouter.</div>`;
+    } else {
+      incomeRows = m.incomeBudget.map(b=>{
+        const received = sourceReceived(currentMonthKey, b.label);
+        const planned = b.amount||0;
+        const pct = planned>0 ? Math.min(100,(received/planned)*100) : (received>0?100:0);
+        const remaining = planned - received;
+        return `<div class="budget-line">
+          <div class="budget-line-top">
+            <span class="cat">${escapeHtml(b.label)}</span>
+            <span class="amt">${fmtAmount(received)} / ${fmtAmount(planned)}</span>
+          </div>
+          <div class="bar-track"><div class="bar-fill income-fill" style="width:${pct}%"></div></div>
+          <div class="remaining-text">${remaining>0 ? `reste à recevoir : ${fmtAmount(remaining)}` : (remaining<0 ? `dépassé de ${fmtAmount(-remaining)}` : 'objectif atteint')}</div>
+        </div>`;
+      }).join('');
+    }
+
+    let catRows = '';
+    if(m.expenseBudget.length===0){
+      catRows = `<div class="empty">Aucun budget défini pour ce mois.<br>Va dans « Budget du mois » pour en créer un.</div>`;
+    } else {
+      catRows = m.expenseBudget.map(b=>{
+        const spent = categorySpent(currentMonthKey, b.label);
+        const planned = b.amount||0;
+        const pct = planned>0 ? Math.min(100,(spent/planned)*100) : (spent>0?100:0);
+        const over = spent > planned;
+        const remaining = planned - spent;
+        return `<div class="budget-line">
+          <div class="budget-line-top">
+            <span class="cat">${escapeHtml(b.label)}</span>
+            <span class="amt">${fmtAmount(spent)} / ${fmtAmount(planned)}</span>
+          </div>
+          <div class="bar-track"><div class="bar-fill ${over?'over':''}" style="width:${pct}%"></div></div>
+          <div class="remaining-text">${over ? `dépassement de ${fmtAmount(-remaining)}` : `reste : ${fmtAmount(remaining)}`}</div>
+        </div>`;
+      }).join('');
+    }
+
+    return `
+      <div class="card">
+        <h2>Ce mois-ci</h2>
+        <div class="totals-grid">
+          <div class="total-box income"><div class="label">Revenus</div><div class="value">${fmtAmount(totals.income)}</div></div>
+          <div class="total-box expense"><div class="label">Dépenses</div><div class="value">${fmtAmount(totals.expense)}</div></div>
+        </div>
+        ${incomeBudgetTotal>0 ? `<div class="muted" style="margin-top:8px;">Prévu ce mois : ${fmtAmount(incomeBudgetTotal)} revenus attendus</div>`:''}
+      </div>
+
+      <div class="card">
+        <h2>Revenus par source</h2>
+        ${incomeRows}
+      </div>
+
+      <div class="card">
+        <h2>Budget par catégorie</h2>
+        ${catRows}
+      </div>
+
+      <div class="card">
+        <h2>Total sur tous les comptes</h2>
+        <div class="grand-total">
+          <span class="muted">Solde global</span>
+          <span class="value">${fmtAmount(totalBalance)}</span>
+        </div>
+      </div>
+    `;
+  }
+
+  // ----- Accounts -----
+  function renderAccounts(){
+    const rows = state.accounts.map(a=>`
+      <div class="account-row account-row-clickable" data-id="${a.id}">
+        <div>
+          <div class="name">${escapeHtml(a.name)}</div>
+          <div class="tag">solde de départ ${fmtAmount(a.start||0)}</div>
+        </div>
+        <div class="bal">${fmtAmount(accountBalance(a))}</div>
+      </div>
+    `).join('');
+    return `
+      <div class="card">
+        <h2>Tes comptes</h2>
+        ${rows || '<div class="empty">Aucun compte pour l\u2019instant.</div>'}
+        <button class="btn-secondary" id="addAccountBtn">+ Ajouter un compte</button>
+      </div>
+      <div class="card">
+        <div class="muted">Le solde de chaque compte = solde de départ + tous les mouvements enregistrés dessus. Modifie le solde de départ si le compte contenait déjà de l'argent avant d'utiliser l'appli.</div>
+      </div>
+    `;
+  }
+
+  // ----- Transactions -----
+  function renderTransactions(){
+    const txs = monthTransactions(currentMonthKey).slice().sort((a,b)=> b.date.localeCompare(a.date));
+    if(txs.length===0){
+      return `<div class="card"><h2>Mouvements — ${fmtMonth(currentMonthKey)}</h2>
+        <div class="empty">Aucun mouvement ce mois-ci.<br>Appuie sur + pour en ajouter un.</div></div>`;
+    }
+    const rows = txs.map(tx=>{
+      const acc = state.accounts.find(a=>a.id===tx.accountId);
+      return `<div class="tx-row">
+        <div class="tx-left">
+          <div class="tx-cat">${escapeHtml(tx.category)}</div>
+          <div class="tx-meta">${tx.date} · ${acc?escapeHtml(acc.name):'?'}${tx.note? ' · '+escapeHtml(tx.note):''}</div>
+        </div>
+        <div class="tx-amt ${tx.type}">${tx.type==='income'?'+':'-'}${fmtAmount(tx.amount)}</div>
+        <button class="tx-del" data-id="${tx.id}">✕</button>
+      </div>`;
+    }).join('');
+    return `<div class="card"><h2>Mouvements — ${fmtMonth(currentMonthKey)}</h2>${rows}</div>`;
+  }
+
+  // ----- Budget du mois -----
+  function renderBudget(m){
+    const incomeRows = m.incomeBudget.map((b,i)=>`
+      <div class="budget-input-row" data-kind="income" data-idx="${i}">
+        <input type="text" class="bl-label" value="${escapeAttr(b.label)}" placeholder="Source">
+        <input type="number" class="bl-amount" value="${b.amount||''}" placeholder="Montant">
+        <button class="bl-del">✕</button>
+      </div>`).join('');
+    const expenseRows = m.expenseBudget.map((b,i)=>`
+      <div class="budget-input-row" data-kind="expense" data-idx="${i}">
+        <input type="text" class="bl-label" value="${escapeAttr(b.label)}" placeholder="Catégorie">
+        <input type="number" class="bl-amount" value="${b.amount||''}" placeholder="Montant">
+        <button class="bl-del">✕</button>
+      </div>`).join('');
+
+    const incomeTotal = m.incomeBudget.reduce((s,b)=>s+(b.amount||0),0);
+    const expenseTotal = m.expenseBudget.reduce((s,b)=>s+(b.amount||0),0);
+    const unassigned = incomeTotal - expenseTotal;
+    const periodLabel = m.period==='scolaire' ? 'année scolaire' : 'vacances';
+    const hasTemplate = !!state.templates[m.period];
+
+    return `
+      <div class="card">
+        <h2>Modèle « ${periodLabel} »</h2>
+        <div class="muted" style="margin-bottom:10px;">Préremplis ce mois avec ton modèle habituel, puis ajuste les montants selon ta réalité (élèves en plus ou en moins, etc.)</div>
+        <button class="btn-secondary" id="loadTemplateBtn" ${!hasTemplate?'disabled style="opacity:0.5;"':''}>${hasTemplate? '↺ Charger le modèle '+periodLabel : 'Aucun modèle '+periodLabel+' enregistré'}</button>
+        <button class="btn-secondary" id="saveTemplateBtn">💾 Enregistrer ce budget comme modèle ${periodLabel}</button>
+      </div>
+      <div class="card">
+        <h2>Revenus attendus — ${fmtMonth(currentMonthKey)}</h2>
+        <div class="muted" style="margin-bottom:10px;">Ajuste selon la période : plus en année scolaire, moins en vacances.</div>
+        <div id="incomeList">${incomeRows}</div>
+        <button class="btn-secondary" id="addIncomeLine">+ Ajouter une source de revenu</button>
+      </div>
+      <div class="card">
+        <h2>Dépenses prévues — ${fmtMonth(currentMonthKey)}</h2>
+        <div id="expenseList">${expenseRows}</div>
+        <button class="btn-secondary" id="addExpenseLine">+ Ajouter une catégorie</button>
+      </div>
+      <div class="card">
+        <h2>Résumé du budget prévu</h2>
+        <div class="budget-line">
+          <div class="budget-line-top"><span class="cat">Total revenus prévus</span><span class="amt">${fmtAmount(incomeTotal)}</span></div>
+        </div>
+        <div class="budget-line">
+          <div class="budget-line-top"><span class="cat">Total dépenses prévues (toutes catégories)</span><span class="amt">${fmtAmount(expenseTotal)}</span></div>
+        </div>
+        <div class="grand-total">
+          <span class="muted">${unassigned>=0 ? 'Reste non affecté' : 'Dépenses prévues au-delà des revenus'}</span>
+          <span class="value" style="color:${unassigned<0?'var(--over)':'var(--good)'}">${fmtAmount(Math.abs(unassigned))}</span>
+        </div>
+      </div>
+    `;
+  }
+
+  function escapeHtml(s){
+    return String(s??'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+  function escapeAttr(s){ return escapeHtml(s); }
+
+  // ---------- Tab-specific event wiring ----------
+  function attachTabEvents(m){
+    if(currentTab==='dashboard'){
+      const fab = document.getElementById('fabAdd');
+      if(fab) fab.onclick = openTxModal;
+    }
+    if(currentTab==='accounts'){
+      document.getElementById('addAccountBtn').onclick = openAccountModal;
+      document.querySelectorAll('.account-row-clickable').forEach(row=>{
+        row.onclick = ()=> openEditAccountModal(row.dataset.id);
+      });
+      const fab = document.getElementById('fabAdd');
+      if(fab) fab.onclick = openTxModal;
+    }
+    if(currentTab==='transactions'){
+      document.querySelectorAll('.tx-del').forEach(btn=>{
+        btn.onclick = ()=>{
+          state.transactions = state.transactions.filter(t=>t.id!==btn.dataset.id);
+          saveState(); render();
+        };
+      });
+      const fab = document.getElementById('fabAdd');
+      if(fab) fab.onclick = openTxModal;
+    }
+    if(currentTab==='budget'){
+      document.getElementById('addIncomeLine').onclick = ()=>{
+        m.incomeBudget.push({label:'', amount:0});
+        saveState(); render();
+      };
+      document.getElementById('addExpenseLine').onclick = ()=>{
+        m.expenseBudget.push({label:'', amount:0});
+        saveState(); render();
+      };
+      document.getElementById('saveTemplateBtn').onclick = ()=>{
+        state.templates[m.period] = {
+          incomeBudget: m.incomeBudget.map(b=>({label:b.label, amount:b.amount})),
+          expenseBudget: m.expenseBudget.map(b=>({label:b.label, amount:b.amount}))
+        };
+        saveState();
+        showToast('Modèle "'+(m.period==='scolaire'?'année scolaire':'vacances')+'" enregistré');
+        render();
+      };
+      const loadBtn = document.getElementById('loadTemplateBtn');
+      if(loadBtn && !loadBtn.disabled){
+        loadBtn.onclick = ()=>{
+          const tpl = state.templates[m.period];
+          if(!tpl) return;
+          m.incomeBudget = tpl.incomeBudget.map(b=>({label:b.label, amount:b.amount}));
+          m.expenseBudget = tpl.expenseBudget.map(b=>({label:b.label, amount:b.amount}));
+          saveState();
+          showToast('Modèle chargé, ajuste les montants si besoin');
+          render();
+        };
+      }
+      wireBudgetRows(m);
+    }
+  }
+
+  function wireBudgetRows(m){
+    document.querySelectorAll('.budget-input-row').forEach(row=>{
+      const kind = row.dataset.kind;
+      const idx = parseInt(row.dataset.idx,10);
+      const list = kind==='income' ? m.incomeBudget : m.expenseBudget;
+      const labelInput = row.querySelector('.bl-label');
+      const amountInput = row.querySelector('.bl-amount');
+      const delBtn = row.querySelector('.bl-del');
+      labelInput.oninput = ()=>{ list[idx].label = labelInput.value; saveState(); };
+      amountInput.oninput = ()=>{ list[idx].amount = parseFloat(amountInput.value)||0; saveState(); };
+      delBtn.onclick = ()=>{ list.splice(idx,1); saveState(); render(); };
+    });
+  }
+
+  // ---------- Modals ----------
+  function openModal(html){
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay';
+    overlay.id = 'modalOverlay';
+    overlay.innerHTML = `<div class="modal">${html}</div>`;
+    overlay.addEventListener('click', (e)=>{ if(e.target===overlay) closeModal(); });
+    document.body.appendChild(overlay);
+  }
+  function closeModal(){
+    const el = document.getElementById('modalOverlay');
+    if(el) el.remove();
+  }
+
+  function openTxModal(){
+    const accOptions = state.accounts.map(a=>`<option value="${a.id}">${escapeHtml(a.name)}</option>`).join('');
+    openModal(`
+      <h3>Nouveau mouvement <button class="close" id="mClose">✕</button></h3>
+      <div class="seg">
+        <button type="button" class="type-btn income active" data-type="income">Revenu</button>
+        <button type="button" class="type-btn expense" data-type="expense">Dépense</button>
+      </div>
+      <label>Compte</label>
+      <select id="txAccount">${accOptions}</select>
+      <label>Catégorie</label>
+      <input type="text" id="txCategory" list="txCatList" placeholder="ex: Nourriture & Transport">
+      <datalist id="txCatList"></datalist>
+      <div class="row-2">
+        <div>
+          <label>Montant (F CFA)</label>
+          <input type="number" id="txAmount" placeholder="0">
+        </div>
+        <div>
+          <label>Date</label>
+          <input type="date" id="txDate" value="${todayISO()}">
+        </div>
+      </div>
+      <label>Note (optionnel)</label>
+      <input type="text" id="txNote" placeholder="ex: marché, taxi...">
+      <button class="btn-primary" id="txSave">Enregistrer</button>
+    `);
+    let currentType = 'income';
+    updateCatList(currentType);
+    document.getElementById('mClose').onclick = closeModal;
+    document.querySelectorAll('.type-btn').forEach(btn=>{
+      btn.onclick = ()=>{
+        currentType = btn.dataset.type;
+        document.querySelectorAll('.type-btn').forEach(b=>b.classList.remove('active'));
+        btn.classList.add('active');
+        updateCatList(currentType);
+      };
+    });
+    function updateCatList(type){
+      const list = document.getElementById('txCatList');
+      const opts = type==='income' ? state.incomeSources : state.expenseCategories;
+      list.innerHTML = opts.map(o=>`<option value="${escapeAttr(o)}">`).join('');
+    }
+    document.getElementById('txSave').onclick = ()=>{
+      const accountId = document.getElementById('txAccount').value;
+      const category = document.getElementById('txCategory').value.trim();
+      const amount = parseFloat(document.getElementById('txAmount').value);
+      const date = document.getElementById('txDate').value || todayISO();
+      const note = document.getElementById('txNote').value.trim();
+      if(!category){ showToast('Ajoute une catégorie'); return; }
+      if(!amount || amount<=0){ showToast('Montant invalide'); return; }
+      state.transactions.push({id:uid(), accountId, type:currentType, category, amount, date, note});
+      // remember new category/source for future suggestions
+      if(currentType==='income' && !state.incomeSources.includes(category)) state.incomeSources.push(category);
+      if(currentType==='expense' && !state.expenseCategories.includes(category)) state.expenseCategories.push(category);
+      saveState();
+      closeModal();
+      currentMonthKey = date.slice(0,7);
+      render();
+      showToast('Mouvement enregistré');
+    };
+  }
+
+  function openAccountModal(){
+    openModal(`
+      <h3>Nouveau compte <button class="close" id="mClose">✕</button></h3>
+      <label>Nom du compte</label>
+      <input type="text" id="accName" placeholder="ex: Wizall, cash...">
+      <label>Solde de départ (F CFA)</label>
+      <input type="number" id="accStart" placeholder="0">
+      <button class="btn-primary" id="accSave">Ajouter</button>
+    `);
+    document.getElementById('mClose').onclick = closeModal;
+    document.getElementById('accSave').onclick = ()=>{
+      const name = document.getElementById('accName').value.trim();
+      const start = parseFloat(document.getElementById('accStart').value)||0;
+      if(!name){ showToast('Donne un nom au compte'); return; }
+      state.accounts.push({id:uid(), name, start});
+      saveState();
+      closeModal();
+      render();
+    };
+  }
+
+  function openEditAccountModal(accountId){
+    const acc = state.accounts.find(a=>a.id===accountId);
+    if(!acc) return;
+    openModal(`
+      <h3>Modifier le compte <button class="close" id="mClose">✕</button></h3>
+      <label>Nom du compte</label>
+      <input type="text" id="accName" value="${escapeAttr(acc.name)}">
+      <label>Solde de départ (F CFA)</label>
+      <input type="number" id="accStart" value="${acc.start||0}">
+      <button class="btn-primary" id="accSave">Enregistrer</button>
+      <button class="btn-secondary" id="accDelete" style="border-color:var(--over);color:var(--over);">Supprimer ce compte</button>
+    `);
+    document.getElementById('mClose').onclick = closeModal;
+    document.getElementById('accSave').onclick = ()=>{
+      const name = document.getElementById('accName').value.trim();
+      const start = parseFloat(document.getElementById('accStart').value)||0;
+      if(!name){ showToast('Donne un nom au compte'); return; }
+      acc.name = name;
+      acc.start = start;
+      saveState();
+      closeModal();
+      render();
+      showToast('Compte mis à jour');
+    };
+    document.getElementById('accDelete').onclick = ()=>{
+      const hasTx = state.transactions.some(t=>t.accountId===accountId);
+      if(hasTx){
+        showToast('Impossible : des mouvements existent sur ce compte');
+        return;
+      }
+      state.accounts = state.accounts.filter(a=>a.id!==accountId);
+      saveState();
+      closeModal();
+      render();
+    };
+  }
+
+  // ---------- Init ----------
+  (async function init(){
+    await loadState();
+    render();
+  })();
+
+  if('serviceWorker' in navigator){
+    window.addEventListener('load', ()=>{
+      navigator.serviceWorker.register('sw.js').catch(()=>{});
+    });
+  }
+})();
+</script>
+</body>
+</html>
